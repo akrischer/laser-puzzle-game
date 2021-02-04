@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class GridObject : MonoBehaviour
 {
-    private static readonly int GRID_COLLIDER_LAYER = 8;
 
     public Vector3 direction;
 
@@ -13,10 +12,16 @@ public class GridObject : MonoBehaviour
     [SerializeField]
     private int column;
 
+    public Vector2 Position
+    {
+        get; set;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         GetMyGridPosition();
+        Position = new Vector2(row, column);
     }
 
     // Update is called once per frame
@@ -30,7 +35,7 @@ public class GridObject : MonoBehaviour
         RaycastHit hit;
         // Does the ray intersect with any grid colliders?
         // Bit shift the index of the layer to get a bit mask
-        int layerMask = 1 << GRID_COLLIDER_LAYER;
+        int layerMask = 1 << Constants.GRID_COLLIDER_LAYER;
         if (Physics.Raycast(transform.position, direction, out hit, Mathf.Infinity, layerMask))
         {
             Vector2 position = hit.collider.gameObject.GetComponent<GridCollider>().GetPosition;
