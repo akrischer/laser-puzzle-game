@@ -19,6 +19,8 @@ public class GridMovementController : MonoBehaviour
     private InputHandler inputHandler;
     private Grid grid;
 
+    private ISet<Vector2> _debugValidMoveDirs = new HashSet<Vector2>();
+
     // Start is called before the first frame update
     void Start()
     {
@@ -52,9 +54,19 @@ public class GridMovementController : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawRay(slidable.transform.position, raycastDirection);
         }
+
+        if (slidable != null)
+        {
+            foreach (Vector2 validMoveDir in _debugValidMoveDirs)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(slidable.transform.position, new Vector3(validMoveDir.x, validMoveDir.y, slidable.transform.position.z) + slidable.transform.position);
+            }
+        }
+
     }
 
-    void UpdateMoveState()
+    private void UpdateMoveState()
     {
         //We check if we have more than one touch happening.
         //We also check if the first touches phase is Ended (that the finger was lifted)
@@ -102,7 +114,7 @@ public class GridMovementController : MonoBehaviour
         }
     }
 
-    void DeltaMove()
+    private void DeltaMove()
     {
         if (movementState == MovementState.Moving && slidable != null)
         {
@@ -123,22 +135,59 @@ public class GridMovementController : MonoBehaviour
                 moveDirection.Normalize();
             }
 
-            slidable.transform.Translate(moveDirection * .8f * Time.deltaTime);
+            // get valid moves
+            ISet<Vector2> validMoveDirectionVectors = GetValidMoveDirectionVectors(gridColliderUnderSlidable.GetPosition);
+            _debugValidMoveDirs = validMoveDirectionVectors;
+
+            if (validMoveDirectionVectors.Contains(moveDirection))
+            {
+                Vector2 moveVector = moveDirection * .8f * Time.deltaTime;
+                slidable.transform.Translate(moveVector);
+            }
         }
         else if (movementState == MovementState.Stopped && slidable != null)
         {
-            Debug.Log("resetting position");
             Vector3 gridColliderPos = gridColliderUnderSlidable.transform.position;
             slidable.transform.position = new Vector3(gridColliderPos.x, gridColliderPos.y, slidable.transform.position.z);
         }
     }
 
-    void Cleanup()
+    private ISet<Vector2> GetValidMoveDirectionVectors(Vector2 gridPosition)
+    {
+        ISet<Vector2> result = new HashSet<Vector2>();
+        ISet<Grid.Direction> validDirections = grid.GetValidMoveDirections((int)gridPosition.x, (int)gridPosition.y);
+        foreach (Grid.Direction direction in validDirections)
+        {
+            switch (direction)
+            {
+                case Grid.Direction.Down:
+                    result.Add(Vector2.down);
+                    break;
+                case Grid.Direction.Up:
+                    result.Add(Vector2.up);
+                    break;
+                case Grid.Direction.Left:
+                    result.Add(Vector2.left);
+                    break;
+                case Grid.Direction.Right:
+                    result.Add(Vector2.right);
+                    break;
+            }
+        }
+        return result;
+    }
+
+    private void Cleanup()
     {
         if (movementState == MovementState.Stopped)
         {
             gridColliderUnderSlidable = null;
             slidable = null;
         }
+    }
+
+    private ISet<Vector3> ValidMoveDirections(GridObject currentGridObject)
+    {
+        return null;
     }
 }
